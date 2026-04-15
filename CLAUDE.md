@@ -152,16 +152,24 @@ Response (agente finalizou):
   "message": "mensagem de transição",
   "phase": "recommendation",
   "nextPhase": "learning",
-  "recommendationOutput": {
-    "recommendedTools": [
+  "recommendation": {
+    "topPick": "nome da ferramenta principal",
+    "summary": "frase curta explicando por que essa é a melhor opção pro caso dele",
+    "tools": [
       {
         "name": "nome da ferramenta",
-        "reason": "por que é boa pra esse caso",
+        "category": "automação | escrita | análise | design | comunicação | código",
+        "reason": "explicação personalizada pro problema do usuário",
+        "useCase": "exemplo concreto de uso baseado no que ele disse no Agente 1",
+        "howToStart": "passo concreto pra começar",
         "effort": "low | medium | high",
-        "cost": "free | freemium | paid"
+        "effortLabel": "Começa a usar hoje | Precisa de uns dias pra pegar o jeito | Vale o investimento de aprender",
+        "cost": "free | freemium | paid",
+        "costLabel": "label legível em PT-BR com valor quando aplicável",
+        "link": "https://ferramenta.com"
       }
     ],
-    "chosenTool": "ferramenta que o usuário escolheu ou aceitou"
+    "chosenTool": "ferramenta que o usuário escolheu ou null"
   }
 }
 ```
@@ -179,7 +187,7 @@ O hook de chat (`useChat` ou equivalente) precisa:
   ```
 - Detectar `status: "phase_complete"` e executar a troca automaticamente
 - Na transição: adicionar a mensagem do agente ao chat, atualizar `currentPhase`, disparar primeira chamada do próximo webhook com `isFirstMessage: true`
-- Guardar `analysisOutput` / `recommendationOutput` no estado
+- Guardar `analysisOutput` / `recommendation` no estado
 
 O componente de chat NÃO muda visualmente. A troca de agente é invisível para o usuário.
 
