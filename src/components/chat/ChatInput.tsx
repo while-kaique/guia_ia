@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, type KeyboardEvent, useRef, useState } from "react";
+import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
 
 interface ChatInputProps {
   onSend: (text: string) => void;
@@ -10,6 +10,13 @@ interface ChatInputProps {
 export default function ChatInput({ onSend, disabled = false }: ChatInputProps) {
   const [text, setText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Devolve foco ao textarea quando disabled volta a false
+  useEffect(() => {
+    if (!disabled) {
+      textareaRef.current?.focus();
+    }
+  }, [disabled]);
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();

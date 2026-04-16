@@ -50,8 +50,8 @@ const COST_COLORS: Record<string, string> = {
 const FAKE_RESOURCES = [
   { type: "video" as const, title: "Tutorial: Primeiros passos", url: "https://www.youtube.com", duration: "12 min" },
   { type: "article" as const, title: "Guia completo para iniciantes", url: "https://www.youtube.com" },
-  { type: "video" as const, title: "Exemplo pr\u00E1tico: automa\u00E7\u00E3o real", url: "https://www.youtube.com", duration: "18 min" },
-  { type: "article" as const, title: "Dicas e boas pr\u00E1ticas", url: "https://www.youtube.com" },
+  { type: "video" as const, title: "Exemplo prático: automação real", url: "https://www.youtube.com", duration: "18 min" },
+  { type: "article" as const, title: "Dicas e boas práticas", url: "https://www.youtube.com" },
 ];
 
 interface ToolRecommendationCardsProps {
@@ -76,7 +76,7 @@ export default function ToolRecommendationCards({ recommendation }: ToolRecommen
       <div className="flex items-center gap-2 mb-4">
         <span className="text-lg" role="img" aria-hidden="true">{"\u{1F4A1}"}</span>
         <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
-          Sugerimos essas op\u00E7\u00F5es:
+          Sugerimos essas opções:
         </p>
       </div>
 
@@ -96,7 +96,7 @@ export default function ToolRecommendationCards({ recommendation }: ToolRecommen
               whileTap={{ scale: 0.97 }}
               onClick={() => handleToolClick(tool.name)}
               className={`
-                relative flex items-center gap-2.5 px-5 py-3.5 rounded-xl border-2 transition-all duration-200
+                relative flex items-center gap-2.5 px-5 py-3.5 rounded-xl border-2 transition-all duration-200 cursor-pointer
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
                 ${isExpanded
                   ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 shadow-md"
@@ -117,7 +117,7 @@ export default function ToolRecommendationCards({ recommendation }: ToolRecommen
               </span>
               {isTopPick && (
                 <span className="absolute -top-2.5 -right-2 text-[10px] bg-amber-400 text-amber-900 px-2 py-0.5 rounded-full font-bold shadow-sm">
-                  {"\u2B50"} Melhor op\u00E7\u00E3o
+                  {"\u2B50"} Melhor opção
                 </span>
               )}
             </motion.button>
@@ -157,7 +157,7 @@ function ExpandedToolGuide({ tool, isTopPick }: { tool: RecommendedTool; isTopPi
           </div>
           {isTopPick && (
             <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-3 py-1 rounded-full font-medium">
-              {"\u2B50"} Recomenda\u00E7\u00E3o principal
+              {"\u2B50"} Recomendação principal
             </span>
           )}
         </div>

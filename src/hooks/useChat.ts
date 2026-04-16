@@ -100,8 +100,14 @@ export function useChat(): UseChatReturn {
             createMessage("assistant", nextResponse.message),
           ]);
 
-          // Se o próximo agente também completou de primeira (improvável, mas seguro)
+          // Se o próximo agente também completou de primeira
           if (nextResponse.status === "phase_complete" && nextResponse.nextPhase) {
+            if (nextResponse.recommendation) {
+              setAgentOutputs((prev) => ({
+                ...prev,
+                recommendation: nextResponse.recommendation,
+              }));
+            }
             setCurrentPhase(nextResponse.nextPhase);
           }
 
