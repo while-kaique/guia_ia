@@ -25,6 +25,12 @@ export default function OnboardingFlow() {
   } = useOnboarding();
 
   function handleTransitionComplete() {
+    // Limpa estado de chat anterior para garantir sessão nova
+    sessionStorage.removeItem("chat_messages");
+    sessionStorage.removeItem("chat_phase");
+    sessionStorage.removeItem("chat_agent_outputs");
+    sessionStorage.removeItem("session_id");
+
     // Salvar dados do onboarding na sessionStorage para o chat
     sessionStorage.setItem("onboarding_data", JSON.stringify(data));
     router.push("/chat");

@@ -4,12 +4,13 @@ import type { AgentPhase, ChatRequest, ChatResponse } from "@/lib/types";
 const WEBHOOK_MAP: Partial<Record<AgentPhase, string | undefined>> = {
   understanding: process.env.N8N_WEBHOOK_AGENT1,
   recommendation: process.env.N8N_WEBHOOK_AGENT2,
+  learning: process.env.N8N_WEBHOOK_AGENT3,
 };
 
 export async function POST(request: Request) {
   const body = (await request.json()) as ChatRequest;
 
-  const { session_id, message, phase, isFirstMessage } = body;
+  const { session_id, message, phase, isFirstMessage, chosenTools } = body;
 
   if (!session_id || !phase) {
     return NextResponse.json(
@@ -27,9 +28,16 @@ export async function POST(request: Request) {
     );
   }
 
-  const n8nPayload = isFirstMessage
-    ? { session_id, message: "", isFirstMessage: true }
-    : { session_id, message };
+  let n8nPayload: Record<string, unknown>;
+
+  if (isFirstMessage) {
+    n8nPayload = { session_id, message: "", isFirstMessage: true };
+    if (chosenTools) {
+      n8nPayload.chosenTools = chosenTools;
+    }
+  } else {
+    n8nPayload = { session_id, message };
+  }
 
   const n8nResponse = await fetch(webhookUrl, {
     method: "POST",
@@ -61,6 +69,7 @@ export async function POST(request: Request) {
       nextPhase: item.can_go as ChatResponse["nextPhase"],
       analysisOutput: item.analysisOutput as ChatResponse["analysisOutput"],
       recommendation: item.recommendation as ChatResponse["recommendation"],
+      learningPath: item.learningPath as ChatResponse["learningPath"],
     };
     return NextResponse.json(data);
   }

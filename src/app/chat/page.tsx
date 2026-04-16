@@ -15,11 +15,18 @@ export default function ChatPage() {
     return newId;
   });
 
-  const { messages, currentPhase, isLoading, agentOutputs, sendMessage, initChat } = useChat();
+  const { messages, currentPhase, isLoading, isRestored, agentOutputs, sendMessage, sendToolChoices, initChat } = useChat();
   const initialized = useRef(false);
 
   useEffect(() => {
-    if (initialized.current) return;
+    if (!isRestored || initialized.current) return;
+
+    // Se já existe estado do chat restaurado, não aciona nenhum webhook
+    const restoredPhase = sessionStorage.getItem("chat_phase");
+    if (restoredPhase && restoredPhase !== "onboarding") {
+      initialized.current = true;
+      return;
+    }
 
     const stored = sessionStorage.getItem("onboarding_data");
     if (!stored) return;
@@ -44,7 +51,9 @@ export default function ChatPage() {
 
     // Inicia o chat com o Agente 1
     initChat(sessionId, data);
-  }, [sessionId, initChat]);
+  }, [isRestored, sessionId, initChat]);
+
+  if (!isRestored) return null;
 
   return (
     <ChatContainer
@@ -52,7 +61,9 @@ export default function ChatPage() {
       isLoading={isLoading}
       currentPhase={currentPhase}
       recommendation={agentOutputs.recommendation}
+      learningPath={agentOutputs.learningPath}
       onSend={sendMessage}
+      onChooseTools={sendToolChoices}
     />
   );
 }

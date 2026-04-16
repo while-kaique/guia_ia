@@ -6,7 +6,7 @@ Plataforma web interna que guia colaboradores a usar IA no trabalho. O usuário 
 
 Os agentes rodam no **n8n** via webhooks. O frontend é só interface + controle de estado. Toda lógica de IA, histórico de conversa e persistência de contexto está no n8n + Supabase (Postgres).
 
-**Status: MVP funcional** — onboarding, Agente 1, Agente 2 e cards de recomendação prontos. Links de aprendizado ainda são fake (prototipação).
+**Status: MVP funcional** — onboarding, Agente 1, Agente 2, cards de recomendação e Agente 3 (trilha de aprendizado) prontos.
 
 ## Stack
 
@@ -34,7 +34,8 @@ src/
 │   │   ├── ChatContainer.tsx    # Container principal: header, mensagens, input, cards
 │   │   ├── ChatInput.tsx        # Textarea com auto-resize, Enter pra enviar, auto-focus
 │   │   ├── MessageBubble.tsx    # Bolha de mensagem (user/assistant com estilos distintos)
-│   │   ├── ToolRecommendationCards.tsx  # Cards de ferramentas com guia expandível
+│   │   ├── ToolRecommendationCards.tsx  # Cards de ferramentas com seleção pra trilha
+│   │   ├── LearningPathView.tsx # Trilha de aprendizado personalizada (Agente 3)
 │   │   └── TypingIndicator.tsx  # Indicador de "digitando..." com dots animados
 │   ├── onboarding/
 │   │   ├── OnboardingFlow.tsx   # Orquestra as etapas do onboarding
@@ -77,11 +78,15 @@ src/
    │   ├── Pode conversar ou finalizar direto
    │   └── Finaliza com recommendation → transição pra learning
    │
-   └── Cards de recomendação (learning)
-       ├── Botões com emoji das ferramentas (topPick com badge ⭐)
-       ├── Clique expande guia: reason, useCase, howToStart, badges, recursos
-       ├── Links de aprendizado (fake por enquanto)
-       └── Input de chat escondido (não há agente 3 ainda)
+   ├── Cards de recomendação (learning — seleção)
+   │   ├── Botões com emoji das ferramentas (topPick com badge ⭐)
+   │   ├── Clique expande guia: reason, useCase, howToStart, badges, recursos
+   │   └── Usuário seleciona ferramentas → dispara Agente 3
+   │
+   └── Agente 3 (learning — trilha)
+       ├── Recebe ferramentas escolhidas + contexto dos agentes anteriores
+       ├── Retorna trilha personalizada com steps, recursos e links
+       └── LearningPathView renderiza trilhas com separador "ou" entre opções
 ```
 
 ## Arquitetura de comunicação
@@ -110,7 +115,7 @@ A API route (`/api/chat`) funciona como proxy:
 | `onboarding` | ✅ | Perguntas de filtragem (sem agente) | nenhum |
 | `understanding` | ✅ | Agente 1 — compreensão do problema | `N8N_WEBHOOK_AGENT1` |
 | `recommendation` | ✅ | Agente 2 — recomendação de ferramentas | `N8N_WEBHOOK_AGENT2` |
-| `learning` | ✅ parcial | Cards de recomendação com guia (links fake) | nenhum (frontend only) |
+| `learning` | ✅ | Cards de seleção + Agente 3 (trilha de aprendizado) | `N8N_WEBHOOK_AGENT3` |
 | `escalation` | futuro | Direcionamento pro time de RPA | — |
 | `resolved` | futuro | Fluxo encerrado | — |
 
@@ -200,15 +205,61 @@ Webhook POST → Postgres (busca agent1_output) → AI Agent → Code Node (dete
 - Cruzar com `current_tools` — se o usuário já usa a ferramenta, reconhecer isso
 - `nextPhase` deve ser `"learning"` (não "teaching")
 
+### Agente 3 — Trilha de Aprendizado (`learning`)
+
+**Objetivo:** Montar trilha personalizada de aprendizado para as ferramentas que o usuário escolheu.
+
+**Fluxo no n8n:**
+```
+Webhook POST → Postgres (busca contexto dos agentes anteriores) → AI Agent → Respond
+```
+
+**Request:** `{ session_id, message: "", isFirstMessage: true, chosenTools: ["Ferramenta A", "Ferramenta B"] }`
+
+**Response:**
+```json
+{
+  "status": "continue",
+  "message": "mensagem do agente",
+  "phase": "learning",
+  "learningPath": {
+    "overallMessage": "mensagem geral de contexto",
+    "tools": [
+      {
+        "toolName": "Nome da Ferramenta",
+        "difficulty": "beginner | intermediate",
+        "estimatedTime": "ex: 2-3 horas",
+        "steps": [
+          {
+            "order": 1,
+            "title": "título do passo",
+            "description": "descrição do que fazer",
+            "resourceUrl": "https://...",
+            "resourceType": "video | article | docs | interactive",
+            "resourceLabel": "texto do link"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Frontend:**
+- `ToolRecommendationCards` mostra os cards do Agente 2 e permite seleção
+- `sendToolChoices()` no hook `useChat` envia as ferramentas escolhidas
+- `LearningPathView` renderiza as trilhas com timeline vertical, badges de dificuldade, separador "ou" entre trilhas independentes
+
 ## Hook `useChat` — lógica de transição
 
 O hook `useChat` gerencia todo o fluxo multi-agente:
 
 1. **Fase muda automaticamente** quando recebe `status: "phase_complete"` + `nextPhase`
 2. **Auto-trigger:** ao transicionar para `recommendation`, dispara primeira chamada com `isFirstMessage: true`
-3. **Sem auto-trigger para `learning`** — os cards de recomendação assumem a interface
-4. **Outputs salvos em `agentOutputs`:** `analysisOutput` (Agente 1) e `recommendation` (Agente 2)
-5. **Extrai recommendation em ambos os caminhos:** resposta de conversa normal E auto-trigger
+3. **Sem auto-trigger para `learning`** — os cards de seleção assumem a interface
+4. **`sendToolChoices()`:** usuário seleciona ferramentas nos cards → dispara Agente 3 com `chosenTools`
+5. **Outputs salvos em `agentOutputs`:** `analysisOutput` (Agente 1), `recommendation` (Agente 2) e `learningPath` (Agente 3)
+6. **Sub-estados da fase `learning`:** seleção de ferramentas → loading (Agente 3) → trilha pronta
 
 ## Banco de dados — tabela central
 
@@ -238,6 +289,7 @@ Cada agente tem sua própria tabela de histórico de chat no Postgres (gerenciad
 N8N_WEBHOOK_INIT=https://n8n.gocase.com.br/webhook/receber_dados
 N8N_WEBHOOK_AGENT1=https://n8n.gocase.com.br/webhook/agent-understanding
 N8N_WEBHOOK_AGENT2=https://n8n.gocase.com.br/webhook/agent-recommendation
+N8N_WEBHOOK_AGENT3=https://n8n.gocase.com.br/webhook/agent-learning
 ```
 
 Nota: são server-side only (sem `NEXT_PUBLIC_`) — o frontend chama `/api/chat` que faz o proxy.
@@ -263,12 +315,25 @@ interface AnalysisOutput {
   toolsAlreadyUsed: string[]; confidence: string; turnCount: number;
   skipSuggestion: string;
 }
+
+interface LearningStep {
+  order: number; title: string; description: string;
+  resourceUrl?: string; resourceType?: "video" | "article" | "docs" | "interactive";
+  resourceLabel?: string;
+}
+
+interface ToolLearningPlan {
+  toolName: string; steps: LearningStep[]; estimatedTime: string;
+  difficulty: "beginner" | "intermediate";
+}
+
+interface LearningPath {
+  tools: ToolLearningPlan[]; overallMessage: string;
+}
 ```
 
 ## O que falta pro produto completo
 
-- [ ] Links reais de aprendizado nos cards de recomendação (substituir os fake)
-- [ ] Agente 3 — trilha de aprendizado personalizada (webhook + integração)
 - [ ] Fase `escalation` — direcionamento ao time de RPA
 - [ ] Fase `resolved` — encerramento do fluxo
 - [ ] Tracking real (hoje é console.log) — enviar eventos pro banco
@@ -284,6 +349,7 @@ interface AnalysisOutput {
 - Transições suaves entre estados (Framer Motion)
 - Mobile-first, botões grandes e tappable
 - Mensagens de erro amigáveis, nunca técnicas
+- **Nunca usar unicode escapes** (`\u00E1`, `\u00E3`, `\u00EA`, etc.) em strings visíveis ao usuário — sempre escrever os caracteres reais diretamente (`á`, `ã`, `ê`, `ç`, `ó`, emojis, etc.). Escapes aparecem como texto quebrado na UI.
 
 ## Tom da UI
 

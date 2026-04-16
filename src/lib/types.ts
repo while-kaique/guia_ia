@@ -34,13 +34,6 @@ export type AgentPhase =
   | "escalation"
   | "resolved";
 
-export interface ChatRequest {
-  session_id: string;
-  message: string;
-  phase: AgentPhase;
-  isFirstMessage?: boolean;
-}
-
 export interface RecommendedTool {
   name: string;
   category: string;
@@ -74,6 +67,39 @@ export interface Recommendation {
   chosenTool: string | null;
 }
 
+// --- Learning Path (Agente 3) ---
+
+export interface LearningStep {
+  order: number;
+  title: string;
+  description: string;
+  resourceUrl?: string;
+  resourceType?: "video" | "article" | "docs" | "interactive";
+  resourceLabel?: string;
+}
+
+export interface ToolLearningPlan {
+  toolName: string;
+  steps: LearningStep[];
+  estimatedTime: string;
+  difficulty: "beginner" | "intermediate";
+}
+
+export interface LearningPath {
+  tools: ToolLearningPlan[];
+  overallMessage: string;
+}
+
+// --- Chat communication ---
+
+export interface ChatRequest {
+  session_id: string;
+  message: string;
+  phase: AgentPhase;
+  isFirstMessage?: boolean;
+  chosenTools?: string[];
+}
+
 export interface ChatResponse {
   status: "continue" | "phase_complete";
   message: string;
@@ -81,4 +107,5 @@ export interface ChatResponse {
   nextPhase?: AgentPhase;
   analysisOutput?: AnalysisOutput;
   recommendation?: Recommendation;
+  learningPath?: LearningPath;
 }

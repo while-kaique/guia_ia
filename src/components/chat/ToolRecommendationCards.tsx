@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import type { Recommendation, RecommendedTool } from "@/lib/types";
+import { motion } from "framer-motion";
+import type { Recommendation } from "@/lib/types";
 
-// Mapa de emojis reutilizando os mesmos do MultiSelect do onboarding
 const TOOL_EMOJI_MAP: Record<string, string> = {
   chatgpt: "\u{1F916}",
   gemini: "\u2728",
@@ -46,23 +45,38 @@ const COST_COLORS: Record<string, string> = {
   paid: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
 };
 
-// Recursos fake para prototipagem
-const FAKE_RESOURCES = [
-  { type: "video" as const, title: "Tutorial: Primeiros passos", url: "https://www.youtube.com", duration: "12 min" },
-  { type: "article" as const, title: "Guia completo para iniciantes", url: "https://www.youtube.com" },
-  { type: "video" as const, title: "Exemplo prático: automação real", url: "https://www.youtube.com", duration: "18 min" },
-  { type: "article" as const, title: "Dicas e boas práticas", url: "https://www.youtube.com" },
-];
-
 interface ToolRecommendationCardsProps {
   recommendation: Recommendation;
+  onChooseTools: (tools: string[]) => void;
+  disabled?: boolean;
 }
 
-export default function ToolRecommendationCards({ recommendation }: ToolRecommendationCardsProps) {
-  const [expandedTool, setExpandedTool] = useState<string | null>(null);
+export default function ToolRecommendationCards({
+  recommendation,
+  onChooseTools,
+  disabled = false,
+}: ToolRecommendationCardsProps) {
+  const [selectedTools, setSelectedTools] = useState<Set<string>>(() => {
+    // Pré-seleciona o topPick pra facilitar pro leigo
+    return new Set(recommendation.topPick ? [recommendation.topPick] : []);
+  });
 
-  function handleToolClick(toolName: string) {
-    setExpandedTool(expandedTool === toolName ? null : toolName);
+  function toggleTool(toolName: string) {
+    if (disabled) return;
+    setSelectedTools((prev) => {
+      const next = new Set(prev);
+      if (next.has(toolName)) {
+        next.delete(toolName);
+      } else {
+        next.add(toolName);
+      }
+      return next;
+    });
+  }
+
+  function handleSubmit() {
+    if (selectedTools.size === 0 || disabled) return;
+    onChooseTools(Array.from(selectedTools));
   }
 
   return (
@@ -73,190 +87,128 @@ export default function ToolRecommendationCards({ recommendation }: ToolRecommen
       className="w-full"
     >
       {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-2">
         <span className="text-lg" role="img" aria-hidden="true">{"\u{1F4A1}"}</span>
         <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
-          Sugerimos essas opções:
+          Escolha as ferramentas pra montar sua trilha:
         </p>
       </div>
+      <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">
+        Toque nas que te interessam. Pode escolher mais de uma.
+      </p>
 
-      {/* Tool buttons */}
-      <div className="flex flex-wrap gap-3 mb-4">
+      {/* Tool cards */}
+      <div className="flex flex-col gap-3 mb-5">
         {recommendation.tools.map((tool, index) => {
           const isTopPick = tool.name === recommendation.topPick;
-          const isExpanded = expandedTool === tool.name;
+          const isSelected = selectedTools.has(tool.name);
 
           return (
             <motion.button
               key={tool.name}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 + index * 0.1 }}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => handleToolClick(tool.name)}
+              type="button"
+              initial={{ opacity: 0, x: -12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 + index * 0.1, duration: 0.3 }}
+              whileTap={disabled ? undefined : { scale: 0.98 }}
+              onClick={() => toggleTool(tool.name)}
+              disabled={disabled}
               className={`
-                relative flex items-center gap-2.5 px-5 py-3.5 rounded-xl border-2 transition-all duration-200 cursor-pointer
+                relative w-full text-left p-4 rounded-2xl border-2 transition-all duration-200
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
-                ${isExpanded
-                  ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 shadow-md"
-                  : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-sm"
+                ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
+                ${isSelected
+                  ? "border-blue-500 bg-blue-50/80 dark:bg-blue-950/30 shadow-md shadow-blue-500/10"
+                  : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:border-slate-300 dark:hover:border-slate-600"
                 }
               `}
-              aria-expanded={isExpanded}
             >
-              <span className="text-xl" role="img" aria-hidden="true">
-                {getToolEmoji(tool.name)}
-              </span>
-              <span className={`text-sm font-semibold ${
-                isExpanded
-                  ? "text-blue-700 dark:text-blue-300"
-                  : "text-slate-700 dark:text-slate-300"
-              }`}>
-                {tool.name}
-              </span>
+              {/* Top Pick badge */}
               {isTopPick && (
-                <span className="absolute -top-2.5 -right-2 text-[10px] bg-amber-400 text-amber-900 px-2 py-0.5 rounded-full font-bold shadow-sm">
-                  {"\u2B50"} Melhor opção
+                <span className="absolute -top-2.5 right-3 text-[10px] bg-amber-400 text-amber-900 px-2.5 py-0.5 rounded-full font-bold shadow-sm">
+                  {"⭐"} Melhor opção
                 </span>
               )}
+
+              <div className="flex items-start gap-3">
+                {/* Checkbox indicator */}
+                <div className={`
+                  mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all duration-200
+                  ${isSelected
+                    ? "border-blue-500 bg-blue-500"
+                    : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                  }
+                `}>
+                  {isSelected && (
+                    <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                      <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </div>
+
+                {/* Tool info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-xl" role="img" aria-hidden="true">
+                      {getToolEmoji(tool.name)}
+                    </span>
+                    <span className={`text-sm font-semibold ${
+                      isSelected
+                        ? "text-blue-700 dark:text-blue-300"
+                        : "text-slate-800 dark:text-slate-200"
+                    }`}>
+                      {tool.name}
+                    </span>
+                  </div>
+
+                  {/* Badges */}
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${EFFORT_COLORS[tool.effort]}`}>
+                      {"\u23F1"} {tool.effortLabel}
+                    </span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${COST_COLORS[tool.cost]}`}>
+                      {"\u{1F4B0}"} {tool.costLabel}
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                      {"\u{1F4C2}"} {tool.category}
+                    </span>
+                  </div>
+
+                  {/* Reason */}
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2">
+                    {tool.reason}
+                  </p>
+                </div>
+              </div>
             </motion.button>
           );
         })}
       </div>
 
-      {/* Expanded tool guide */}
-      <AnimatePresence mode="wait">
-        {expandedTool && (
-          <ExpandedToolGuide
-            key={expandedTool}
-            tool={recommendation.tools.find((t) => t.name === expandedTool)!}
-            isTopPick={expandedTool === recommendation.topPick}
-          />
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-}
-
-function ExpandedToolGuide({ tool, isTopPick }: { tool: RecommendedTool; isTopPick: boolean }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: "auto" }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.3, ease: "easeInOut" }}
-      className="overflow-hidden"
-    >
-      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 space-y-5 shadow-lg">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl" role="img" aria-hidden="true">{getToolEmoji(tool.name)}</span>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{tool.name}</h3>
-          </div>
-          {isTopPick && (
-            <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-3 py-1 rounded-full font-medium">
-              {"\u2B50"} Recomendação principal
-            </span>
-          )}
-        </div>
-
-        {/* Badges */}
-        <div className="flex flex-wrap gap-2">
-          <span className={`text-xs px-3 py-1 rounded-full font-medium ${EFFORT_COLORS[tool.effort]}`}>
-            {"\u23F1"} {tool.effortLabel}
-          </span>
-          <span className={`text-xs px-3 py-1 rounded-full font-medium ${COST_COLORS[tool.cost]}`}>
-            {"\u{1F4B0}"} {tool.costLabel}
-          </span>
-          <span className="text-xs px-3 py-1 rounded-full font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-            {"\u{1F4C2}"} {tool.category}
-          </span>
-        </div>
-
-        {/* Reason */}
-        <div>
-          <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-            Por que essa ferramenta?
-          </h4>
-          <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
-            {tool.reason}
-          </p>
-        </div>
-
-        {/* Use case */}
-        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-xl p-4">
-          <h4 className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1.5">
-            {"\u{1F4A1}"} No seu dia a dia
-          </h4>
-          <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed">
-            {tool.useCase}
-          </p>
-        </div>
-
-        {/* How to start */}
-        <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-xl p-4">
-          <h4 className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1.5">
-            {"\u{1F680}"} Primeiro passo
-          </h4>
-          <p className="text-sm text-emerald-800 dark:text-emerald-200 leading-relaxed">
-            {tool.howToStart}
-          </p>
-        </div>
-
-        {/* Learning resources */}
-        <div>
-          <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-            {"\u{1F4DA}"} Recursos pra aprender
-          </h4>
-          <div className="space-y-2">
-            {FAKE_RESOURCES.map((resource, i) => (
-              <a
-                key={i}
-                href={resource.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors group"
-              >
-                <span className="text-lg" role="img" aria-hidden="true">
-                  {resource.type === "video" ? "\u25B6\uFE0F" : "\u{1F4D6}"}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                    {resource.title}
-                  </p>
-                  {resource.duration && (
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{resource.duration}</p>
-                  )}
-                </div>
-                <svg
-                  className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors shrink-0"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.22 14.78a.75.75 0 001.06 0l7.22-7.22v5.69a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75h-7.5a.75.75 0 000 1.5h5.69l-7.22 7.22a.75.75 0 000 1.06z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </a>
-            ))}
-          </div>
-        </div>
-
-        {/* CTA link */}
-        <a
-          href={tool.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block w-full text-center px-5 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 hover:from-blue-700 hover:to-blue-600 transition-all"
-        >
-          Conhecer {tool.name} {"\u2192"}
-        </a>
-      </div>
+      {/* CTA */}
+      <motion.button
+        type="button"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.3 }}
+        whileHover={selectedTools.size > 0 && !disabled ? { scale: 1.02 } : undefined}
+        whileTap={selectedTools.size > 0 && !disabled ? { scale: 0.98 } : undefined}
+        onClick={handleSubmit}
+        disabled={selectedTools.size === 0 || disabled}
+        className={`
+          w-full py-3.5 px-5 rounded-xl text-sm font-semibold transition-all duration-200
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2
+          ${selectedTools.size > 0 && !disabled
+            ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 hover:from-blue-700 hover:to-blue-600"
+            : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed"
+          }
+        `}
+      >
+        {selectedTools.size > 0
+          ? `\u{1F680} Montar minha trilha (${selectedTools.size})`
+          : "Selecione ao menos uma ferramenta"
+        }
+      </motion.button>
     </motion.div>
   );
 }

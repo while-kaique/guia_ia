@@ -2,18 +2,21 @@
 
 import { useEffect, useRef } from "react";
 import { AnimatePresence } from "framer-motion";
-import type { AgentPhase, ChatMessage, Recommendation } from "@/lib/types";
+import type { AgentPhase, ChatMessage, LearningPath, Recommendation } from "@/lib/types";
 import MessageBubble from "./MessageBubble";
 import TypingIndicator from "./TypingIndicator";
 import ChatInput from "./ChatInput";
 import ToolRecommendationCards from "./ToolRecommendationCards";
+import LearningPathView from "./LearningPathView";
 
 interface ChatContainerProps {
   messages: ChatMessage[];
   isLoading: boolean;
   currentPhase: AgentPhase;
   recommendation?: Recommendation;
+  learningPath?: LearningPath;
   onSend: (text: string) => void;
+  onChooseTools: (tools: string[]) => void;
 }
 
 const PHASE_LABELS: Partial<Record<AgentPhase, string>> = {
@@ -27,15 +30,25 @@ export default function ChatContainer({
   isLoading,
   currentPhase,
   recommendation,
+  learningPath,
   onSend,
+  onChooseTools,
 }: ChatContainerProps) {
-  const showRecommendation = !!recommendation && currentPhase === "learning";
+  // Sub-estados da fase learning:
+  // 1. Tem recommendation, não tem learningPath → seleção de ferramentas
+  // 2. isLoading após seleção → agente 3 processando
+  // 3. Tem learningPath → trilha pronta
+  const isLearningPhase = currentPhase === "learning";
+  const showToolSelection = isLearningPhase && !!recommendation && !learningPath;
+  const showLearningPath = isLearningPhase && !!learningPath;
+  const showChatInput = !isLearningPhase && currentPhase !== "resolved";
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll quando chegam novas mensagens
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isLoading]);
+  }, [messages, isLoading, learningPath]);
 
   const phaseLabel = PHASE_LABELS[currentPhase];
 
@@ -80,21 +93,31 @@ export default function ChatContainer({
             {isLoading && <TypingIndicator />}
           </AnimatePresence>
 
-          {showRecommendation && (
-            <ToolRecommendationCards recommendation={recommendation} />
+          {/* Fase learning: seleção de ferramentas */}
+          {showToolSelection && (
+            <ToolRecommendationCards
+              recommendation={recommendation}
+              onChooseTools={onChooseTools}
+              disabled={isLoading}
+            />
+          )}
+
+          {/* Fase learning: trilha de aprendizado */}
+          {showLearningPath && (
+            <LearningPathView learningPath={learningPath} />
           )}
 
           <div ref={messagesEndRef} />
         </div>
       </main>
 
-      {/* Input — esconde quando mostra recomendações (não há agente 3 ainda) */}
-      {!showRecommendation && (
+      {/* Input — só aparece nas fases de conversa (understanding, recommendation) */}
+      {showChatInput && (
         <div className="sticky bottom-0 px-6 py-4 bg-white/80 dark:bg-slate-950/80 backdrop-blur-lg border-t border-slate-100 dark:border-slate-800/50">
           <div className="max-w-2xl mx-auto">
             <ChatInput
               onSend={onSend}
-              disabled={isLoading || currentPhase === "resolved"}
+              disabled={isLoading}
             />
           </div>
         </div>
