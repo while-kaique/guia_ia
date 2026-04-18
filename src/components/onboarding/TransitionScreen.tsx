@@ -46,19 +46,19 @@ export default function TransitionScreen({ onComplete }: TransitionScreenProps) 
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-          className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 border-r-emerald-400"
+          className="absolute inset-0 rounded-full border-2 border-transparent border-t-[var(--phase-from)] border-r-[var(--phase-to)]"
         />
         {/* Anel interno rotativo (sentido contrário) */}
         <motion.div
           animate={{ rotate: -360 }}
           transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          className="absolute inset-3 rounded-full border-2 border-transparent border-b-blue-400 border-l-emerald-300"
+          className="absolute inset-3 rounded-full border-2 border-transparent border-b-[var(--phase-to)] border-l-[var(--phase-from)] opacity-70"
         />
         {/* Centro pulsante */}
         <motion.div
           animate={{ scale: [1, 1.2, 1] }}
           transition={{ duration: 1.5, repeat: Infinity }}
-          className="absolute inset-7 rounded-full bg-gradient-to-br from-blue-500 to-emerald-400 shadow-lg shadow-blue-500/30"
+          className="absolute inset-7 rounded-full bg-gradient-to-br from-[var(--phase-from)] to-[var(--phase-to)] shadow-lg shadow-[color-mix(in_oklab,var(--phase-accent)_35%,transparent)]"
         />
       </motion.div>
 
@@ -77,11 +77,12 @@ export default function TransitionScreen({ onComplete }: TransitionScreenProps) 
         {messages.map((_, i) => (
           <motion.div
             key={i}
-            animate={{
-              scale: i === messageIndex ? 1.3 : 1,
-              backgroundColor: i <= messageIndex ? "#3b82f6" : "#cbd5e1",
-            }}
-            className="w-2 h-2 rounded-full"
+            animate={{ scale: i === messageIndex ? 1.3 : 1 }}
+            className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+              i <= messageIndex
+                ? "bg-[var(--phase-accent)]"
+                : "bg-slate-300 dark:bg-slate-600"
+            }`}
           />
         ))}
       </div>

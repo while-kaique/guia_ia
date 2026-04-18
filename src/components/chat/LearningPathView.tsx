@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import type { LearningPath, LearningStep, ToolLearningPlan } from "@/lib/types";
 
 const TOOL_EMOJI_MAP: Record<string, string> = {
@@ -51,6 +52,19 @@ interface LearningPathViewProps {
 export default function LearningPathView({ learningPath }: LearningPathViewProps) {
   const hasMultipleTools = learningPath.tools.length > 1;
 
+  // Todas as trilhas começam fechadas — usuário clica pra abrir uma de cada vez
+  // e evita que a tela desça de uma vez só.
+  const [openTools, setOpenTools] = useState<Set<string>>(() => new Set());
+
+  function toggleTool(toolName: string) {
+    setOpenTools((prev) => {
+      const next = new Set(prev);
+      if (next.has(toolName)) next.delete(toolName);
+      else next.add(toolName);
+      return next;
+    });
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -67,8 +81,8 @@ export default function LearningPathView({ learningPath }: LearningPathViewProps
       </div>
 
       {/* Overall message */}
-      <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-xl p-4 mb-4">
-        <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed">
+      <div className="bg-[color-mix(in_oklab,var(--phase-accent)_8%,transparent)] border border-[color-mix(in_oklab,var(--phase-accent)_20%,transparent)] rounded-xl p-4 mb-4">
+        <p className="text-sm text-[var(--phase-accent-strong)] dark:text-[var(--phase-accent-light)] leading-relaxed">
           {learningPath.overallMessage}
         </p>
       </div>
@@ -79,36 +93,26 @@ export default function LearningPathView({ learningPath }: LearningPathViewProps
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.15, duration: 0.3 }}
-          className="flex items-center gap-2 mb-5 px-1"
+          className="flex items-center gap-2 mb-4 px-1"
         >
           <span className="text-sm" role="img" aria-hidden="true">{"👆"}</span>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-            Cada trilha abaixo é <strong className="text-slate-700 dark:text-slate-300">uma opção independente</strong> — você não precisa fazer todas.
-            Escolha a que fizer mais sentido pra você.
+            Toque numa trilha pra abrir os passos. Cada uma é <strong className="text-slate-700 dark:text-slate-300">uma opção independente</strong> — escolha a que fizer mais sentido.
           </p>
         </motion.div>
       )}
 
       {/* Tool plans */}
-      <div className="flex flex-col gap-0">
+      <div className="flex flex-col gap-3">
         {learningPath.tools.map((plan, planIndex) => (
-          <div key={plan.toolName}>
-            <ToolPlanSection
-              plan={plan}
-              index={planIndex}
-              totalTools={learningPath.tools.length}
-            />
-            {/* Separador "OU" entre trilhas */}
-            {hasMultipleTools && planIndex < learningPath.tools.length - 1 && (
-              <div className="flex items-center gap-3 my-5">
-                <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
-                <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest px-2">
-                  ou
-                </span>
-                <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
-              </div>
-            )}
-          </div>
+          <ToolPlanSection
+            key={plan.toolName}
+            plan={plan}
+            index={planIndex}
+            totalTools={learningPath.tools.length}
+            isOpen={openTools.has(plan.toolName)}
+            onToggle={() => toggleTool(plan.toolName)}
+          />
         ))}
       </div>
 
@@ -116,8 +120,8 @@ export default function LearningPathView({ learningPath }: LearningPathViewProps
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.8, duration: 0.5 }}
-        className="mt-6 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-xl p-4"
+        transition={{ delay: 0.4, duration: 0.5 }}
+        className="mt-5 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-xl p-4"
       >
         <p className="text-sm text-emerald-800 dark:text-emerald-200 leading-relaxed">
           {"💪"} <strong>Você já tá no caminho certo!</strong> Segue no seu ritmo, sem pressa.
@@ -134,7 +138,19 @@ const PLAN_ACCENT_COLORS = [
   { border: "border-l-amber-500", bg: "bg-amber-500", label: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" },
 ];
 
-function ToolPlanSection({ plan, index, totalTools }: { plan: ToolLearningPlan; index: number; totalTools: number }) {
+function ToolPlanSection({
+  plan,
+  index,
+  totalTools,
+  isOpen,
+  onToggle,
+}: {
+  plan: ToolLearningPlan;
+  index: number;
+  totalTools: number;
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
   const hasMultiple = totalTools > 1;
   const accent = PLAN_ACCENT_COLORS[index % PLAN_ACCENT_COLORS.length];
 
@@ -148,9 +164,14 @@ function ToolPlanSection({ plan, index, totalTools }: { plan: ToolLearningPlan; 
         ${hasMultiple ? `border-l-4 ${accent.border}` : ""}
       `}
     >
-      {/* Tool header */}
-      <div className="flex items-center justify-between px-5 py-3.5 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">
-        <div className="flex items-center gap-2.5">
+      {/* Tool header — clicável, alterna expandido/recolhido */}
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        className="w-full text-left flex items-center justify-between gap-3 px-5 py-3.5 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+      >
+        <div className="flex items-center gap-2.5 flex-wrap min-w-0">
           {hasMultiple && (
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${accent.label}`}>
               Trilha {index + 1} de {totalTools}
@@ -166,31 +187,59 @@ function ToolPlanSection({ plan, index, totalTools }: { plan: ToolLearningPlan; 
             {DIFFICULTY_LABELS[plan.difficulty] ?? plan.difficulty}
           </span>
         </div>
-        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-          {"\u23F1"} {plan.estimatedTime}
-        </span>
-      </div>
-
-      {/* Steps */}
-      <div className="px-5 py-4">
-        <div className="relative">
-          {/* Vertical line */}
-          <div className="absolute left-[11px] top-3 bottom-3 w-0.5 bg-slate-200 dark:bg-slate-700" />
-
-          <div className="flex flex-col gap-5">
-            {plan.steps.map((step, stepIndex) => (
-              <StepItem
-                key={step.order}
-                step={step}
-                stepIndex={stepIndex}
-                isFirst={stepIndex === 0}
-                isLast={stepIndex === plan.steps.length - 1}
-                parentIndex={index}
-              />
-            ))}
-          </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
+            {"\u23F1"} {plan.estimatedTime}
+          </span>
+          <motion.svg
+            animate={{ rotate: isOpen ? 180 : 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              fillRule="evenodd"
+              d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"
+              clipRule="evenodd"
+            />
+          </motion.svg>
         </div>
-      </div>
+      </button>
+
+      {/* Steps — colapsáveis */}
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            key="content"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="overflow-hidden"
+          >
+            <div className="px-5 py-4 border-t border-slate-200 dark:border-slate-700">
+              <div className="relative">
+                {/* Vertical line */}
+                <div className="absolute left-[11px] top-3 bottom-3 w-0.5 bg-slate-200 dark:bg-slate-700" />
+
+                <div className="flex flex-col gap-5">
+                  {plan.steps.map((step, stepIndex) => (
+                    <StepItem
+                      key={step.order}
+                      step={step}
+                      stepIndex={stepIndex}
+                      isFirst={stepIndex === 0}
+                      isLast={stepIndex === plan.steps.length - 1}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
@@ -200,26 +249,24 @@ function StepItem({
   stepIndex,
   isFirst,
   isLast,
-  parentIndex,
 }: {
   step: LearningStep;
   stepIndex: number;
   isFirst: boolean;
   isLast: boolean;
-  parentIndex: number;
 }) {
   return (
     <motion.div
       initial={{ opacity: 0, x: -8 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.4 + parentIndex * 0.15 + stepIndex * 0.08, duration: 0.3 }}
+      transition={{ delay: stepIndex * 0.05, duration: 0.25 }}
       className="relative pl-9"
     >
       {/* Step number circle */}
       <div className={`
         absolute left-0 top-0.5 w-[23px] h-[23px] rounded-full flex items-center justify-center text-[11px] font-bold z-10
         ${isFirst
-          ? "bg-blue-500 text-white shadow-sm shadow-blue-500/30"
+          ? "bg-[var(--phase-accent)] text-white shadow-sm shadow-[color-mix(in_oklab,var(--phase-accent)_30%,transparent)]"
           : isLast
             ? "bg-emerald-500 text-white shadow-sm shadow-emerald-500/30"
             : "bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-2 border-slate-300 dark:border-slate-600"
@@ -243,7 +290,7 @@ function StepItem({
             href={step.resourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors group"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--phase-accent)] hover:text-[var(--phase-accent-strong)] dark:hover:text-[var(--phase-accent-light)] transition-colors group"
           >
             <span role="img" aria-hidden="true">
               {RESOURCE_ICONS[step.resourceType ?? "docs"]}

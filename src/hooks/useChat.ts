@@ -118,6 +118,9 @@ export function useChat(): UseChatReturn {
   const [isRestored, setIsRestored] = useState(false);
 
   const sessionIdRef = useRef<string>("");
+  // Quando o auto-trigger da fase recommendation falha, o próximo sendMessage
+  // precisa re-enviar com isFirstMessage: true pra Agente 2 recarregar contexto.
+  const pendingFirstMessagePhaseRef = useRef<AgentPhase | null>(null);
 
   // Restaura estado do sessionStorage no mount (client-only, evita hydration mismatch)
   useEffect(() => {
@@ -184,29 +187,40 @@ export function useChat(): UseChatReturn {
         // (não dispara para "learning" — os cards de seleção assumem)
         if (nextPhase === "recommendation") {
           setIsLoading(true);
-          const nextResponse = await postChat(
-            sessionIdRef.current,
-            "",
-            nextPhase,
-            true,
-          );
-          setMessages((prev) => [
-            ...prev,
-            createMessage("assistant", nextResponse.message),
-          ]);
+          try {
+            const nextResponse = await postChat(
+              sessionIdRef.current,
+              "",
+              nextPhase,
+              true,
+            );
+            setMessages((prev) => [
+              ...prev,
+              createMessage("assistant", nextResponse.message),
+            ]);
 
-          // Se o próximo agente também completou de primeira
-          if (nextResponse.status === "phase_complete" && nextResponse.nextPhase) {
-            if (nextResponse.recommendation) {
-              setAgentOutputs((prev) => ({
-                ...prev,
-                recommendation: nextResponse.recommendation,
-              }));
+            // Se o próximo agente também completou de primeira
+            if (nextResponse.status === "phase_complete" && nextResponse.nextPhase) {
+              if (nextResponse.recommendation) {
+                setAgentOutputs((prev) => ({
+                  ...prev,
+                  recommendation: nextResponse.recommendation,
+                }));
+              }
+              setCurrentPhase(nextResponse.nextPhase);
             }
-            setCurrentPhase(nextResponse.nextPhase);
+          } catch {
+            pendingFirstMessagePhaseRef.current = nextPhase;
+            setMessages((prev) => [
+              ...prev,
+              createMessage(
+                "assistant",
+                "Tive um tropeço agora pra gerar as recomendações — o serviço deu uma engasgada. Manda qualquer mensagem aqui que eu tento de novo.",
+              ),
+            ]);
+          } finally {
+            setIsLoading(false);
           }
-
-          setIsLoading(false);
         }
       }
     },
@@ -221,12 +235,17 @@ export function useChat(): UseChatReturn {
       setMessages((prev) => [...prev, createMessage("user", text)]);
       setIsLoading(true);
 
+      const isRetryFirstMessage =
+        pendingFirstMessagePhaseRef.current === currentPhase;
+
       try {
         const response = await postChat(
           sessionIdRef.current,
-          text,
+          isRetryFirstMessage ? "" : text,
           currentPhase,
+          isRetryFirstMessage || undefined,
         );
+        if (isRetryFirstMessage) pendingFirstMessagePhaseRef.current = null;
         await handleAgentResponse(response);
       } catch {
         setMessages((prev) => [

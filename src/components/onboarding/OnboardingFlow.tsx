@@ -37,7 +37,7 @@ export default function OnboardingFlow() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-grid">
+    <div data-phase="onboarding" className="h-screen overflow-hidden flex flex-col bg-grid">
       {/* Header com progresso e botão voltar */}
       {step !== "welcome" && step !== "transition" && (
         <motion.header
@@ -65,7 +65,8 @@ export default function OnboardingFlow() {
       )}
 
       {/* Conteúdo principal */}
-      <main className="flex-1 flex items-center justify-center px-6 py-12">
+      <main className="flex-1 overflow-y-auto min-h-0">
+        <div className="min-h-full flex items-center justify-center px-6 py-6">
         {step === "welcome" && <WelcomeScreen onStart={startOnboarding} />}
 
         {step === "usage" && (
@@ -138,6 +139,7 @@ export default function OnboardingFlow() {
         {step === "transition" && (
           <TransitionScreen onComplete={handleTransitionComplete} />
         )}
+        </div>
       </main>
     </div>
   );

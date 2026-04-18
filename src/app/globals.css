@@ -1,5 +1,39 @@
 @import "tailwindcss";
 
+/* Registrando as vars de fase como <color> pra permitir interpolação suave
+   entre trocas de data-phase. Sem @property o browser não consegue animar
+   custom properties e a troca fica brusca. */
+@property --phase-from {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #6366f1;
+}
+@property --phase-to {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #3b82f6;
+}
+@property --phase-accent {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #3b82f6;
+}
+@property --phase-accent-strong {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #1d4ed8;
+}
+@property --phase-accent-light {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #93c5fd;
+}
+@property --phase-tint {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #6366f1;
+}
+
 :root {
   /* Paleta principal - Azul profundo + acentos vibrantes */
   --color-primary: #0f1b4c;
@@ -17,6 +51,72 @@
 
   --background: #f8fafc;
   --foreground: #0f172a;
+
+  /* Tokens de fase — Fase 1 (onboarding/prospecção) é o default */
+  --phase-from: #6366f1;              /* indigo-500 */
+  --phase-to: #3b82f6;                /* blue-500 */
+  --phase-accent: #3b82f6;            /* blue-500 */
+  --phase-accent-strong: #1d4ed8;     /* blue-700 — texto em selected (light) */
+  --phase-accent-light: #93c5fd;      /* blue-300 — texto em selected (dark) */
+  --phase-tint: #6366f1;              /* indigo-500 — cor base pros tons do grid */
+}
+
+/* Fase 2 — Compreensão (chat) — azul claro, mesma paleta que o site inicia.
+   Valores iguais ao :root por intenção: dá continuidade visual entre onboarding
+   e o primeiro momento do chat. */
+[data-phase="understanding"] {
+  --phase-from: #6366f1;              /* indigo-500 */
+  --phase-to: #3b82f6;                /* blue-500 */
+  --phase-accent: #3b82f6;            /* blue-500 */
+  --phase-accent-strong: #1d4ed8;     /* blue-700 */
+  --phase-accent-light: #93c5fd;      /* blue-300 */
+  --phase-tint: #6366f1;
+}
+
+/* Fase 3 — Recomendação — laranja quente, momento energético de "descoberta" */
+[data-phase="recommendation"] {
+  --phase-from: #f59e0b;              /* amber-500 */
+  --phase-to: #f97316;                /* orange-500 */
+  --phase-accent: #ea580c;            /* orange-600 */
+  --phase-accent-strong: #c2410c;     /* orange-700 */
+  --phase-accent-light: #fdba74;      /* orange-300 */
+  --phase-tint: #f97316;
+}
+
+/* Fase 4 — Aprendizado (trilha) — rose/crimson. Os cards das trilhas usam
+   PLAN_ACCENT_COLORS (blue, violet, amber) como detalhe individual, trazendo
+   o azul inicial de volta sem perder a dominância rose da fase. */
+[data-phase="learning"] {
+  --phase-from: #f43f5e;              /* rose-500 */
+  --phase-to: #be123c;                /* rose-700 (crimson) */
+  --phase-accent: #e11d48;            /* rose-600 */
+  --phase-accent-strong: #9f1239;     /* rose-800 */
+  --phase-accent-light: #fda4af;      /* rose-300 */
+  --phase-tint: #f43f5e;
+}
+
+/* Fase 4 — Escalation/Resolved (time de RPA) — violeta tech, autoritário */
+[data-phase="escalation"],
+[data-phase="resolved"] {
+  --phase-from: #8b5cf6;              /* violet-500 */
+  --phase-to: #4338ca;                /* indigo-700 */
+  --phase-accent: #6d28d9;            /* violet-700 */
+  --phase-accent-strong: #5b21b6;     /* violet-800 */
+  --phase-accent-light: #c4b5fd;      /* violet-300 */
+  --phase-tint: #8b5cf6;
+}
+
+/* Transição das vars de fase em qualquer elemento com data-phase.
+   Duration generosa pra troca ficar visivelmente suave em toda a UI
+   (grid do fundo, stepper, bordas, texto acentuado etc.). */
+[data-phase] {
+  transition:
+    --phase-from 900ms ease,
+    --phase-to 900ms ease,
+    --phase-accent 900ms ease,
+    --phase-accent-strong 900ms ease,
+    --phase-accent-light 900ms ease,
+    --phase-tint 900ms ease;
 }
 
 @theme inline {
@@ -51,6 +151,50 @@ body {
   font-family: "General Sans", system-ui, -apple-system, sans-serif;
 }
 
+/* UI chrome e elementos decorativos — sem I-beam e sem seleção de texto.
+   Evita que clicar em "Guia IA", emojis, badges, labels etc. pareça uma área editável.
+   O conteúdo dentro de <main> (mensagens de chat, trilha de aprendizado) mantém
+   seleção normal pro usuário poder copiar. */
+header,
+nav,
+button,
+[role="button"],
+[role="progressbar"],
+[aria-hidden="true"],
+label {
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: default;
+}
+
+/* Cursor pointer em todo elemento interativo — Tailwind v4 preflight remove o padrão dos botões */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+summary,
+label[for] {
+  cursor: pointer;
+}
+
+button:disabled,
+[role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* Elementos decorativos dentro de botões (svg, emojis aria-hidden, badges) herdam
+   o cursor do pai clicável. As regras com [aria-hidden="true"] têm especificidade
+   maior pra vencer a regra global `[aria-hidden="true"] { cursor: default }`
+   declarada acima (0,1,1 > 0,1,0). */
+button *,
+[role="button"] *,
+summary *,
+label[for] *,
+button [aria-hidden="true"],
+[role="button"] [aria-hidden="true"],
+summary [aria-hidden="true"],
+label[for] [aria-hidden="true"] {
+  cursor: inherit;
+}
+
 /* Scrollbar estilizada */
 ::-webkit-scrollbar {
   width: 6px;
@@ -83,18 +227,30 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Grid pattern de fundo */
+/* Grid pattern de fundo — tom base + brilho radial + grade acompanham a fase atual.
+   Usa rgb(from var(--phase-tint) ...) pra extrair os canais rgb da cor da fase
+   e aplicar alpha baixo — equivalente ao rgba() antigo, mas interpolável porque
+   --phase-tint é registrada via @property. */
 .bg-grid {
+  background-color: color-mix(in oklab, var(--background) 94%, var(--phase-accent));
   background-image:
-    linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
-  background-size: 60px 60px;
+    radial-gradient(ellipse 90% 55% at 50% 0%, rgb(from var(--phase-tint) r g b / 0.14), transparent 65%),
+    radial-gradient(ellipse 70% 40% at 50% 100%, rgb(from var(--phase-tint) r g b / 0.08), transparent 65%),
+    linear-gradient(rgb(from var(--phase-tint) r g b / 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(from var(--phase-tint) r g b / 0.045) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 60px 60px, 60px 60px;
+  background-repeat: no-repeat, no-repeat, repeat, repeat;
+  background-position: center top, center bottom, center, center;
+  transition: background-color 900ms ease;
 }
 
 @media (prefers-color-scheme: dark) {
   .bg-grid {
+    background-color: color-mix(in oklab, var(--background) 90%, var(--phase-accent));
     background-image:
-      linear-gradient(rgba(59, 130, 246, 0.06) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(59, 130, 246, 0.06) 1px, transparent 1px);
+      radial-gradient(ellipse 90% 55% at 50% 0%, rgb(from var(--phase-tint) r g b / 0.22), transparent 65%),
+      radial-gradient(ellipse 70% 40% at 50% 100%, rgb(from var(--phase-tint) r g b / 0.12), transparent 65%),
+      linear-gradient(rgb(from var(--phase-tint) r g b / 0.09) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(from var(--phase-tint) r g b / 0.09) 1px, transparent 1px);
   }
 }

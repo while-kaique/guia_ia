@@ -55,13 +55,13 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
         placeholder="Digite sua mensagem..."
         disabled={disabled}
         rows={1}
-        className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-2xl px-5 py-3 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-2xl px-5 py-3 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-[color-mix(in_oklab,var(--phase-accent)_50%,transparent)] disabled:opacity-50 disabled:cursor-not-allowed"
         aria-label="Campo de mensagem"
       />
       <button
         type="submit"
         disabled={disabled || !text.trim()}
-        className="p-3 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+        className="p-3 rounded-2xl bg-gradient-to-r from-[var(--phase-accent)] to-[var(--phase-accent-strong)] text-white shadow-lg shadow-[color-mix(in_oklab,var(--phase-accent)_30%,transparent)] hover:shadow-[color-mix(in_oklab,var(--phase-accent)_45%,transparent)] hover:brightness-110 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
         aria-label="Enviar mensagem"
       >
         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>

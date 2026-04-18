@@ -22,7 +22,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
           max-w-[85%] px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap
           ${
             isUser
-              ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-2xl rounded-br-md shadow-lg shadow-blue-500/15"
+              ? "bg-gradient-to-r from-[var(--phase-accent)] to-[var(--phase-accent-strong)] text-white rounded-2xl rounded-br-md shadow-lg shadow-[color-mix(in_oklab,var(--phase-accent)_20%,transparent)]"
               : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-2xl rounded-bl-md"
           }
         `}

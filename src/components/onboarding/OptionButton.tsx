@@ -24,10 +24,10 @@ export default function OptionButton({
       whileTap={{ scale: 0.98 }}
       className={`
         w-full text-left p-5 rounded-2xl border-2 transition-all duration-200
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--phase-accent)] focus-visible:ring-offset-2
         ${
           selected
-            ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 shadow-lg shadow-blue-500/10"
+            ? "border-[var(--phase-accent)] bg-[color-mix(in_oklab,var(--phase-accent)_8%,transparent)] shadow-lg shadow-[color-mix(in_oklab,var(--phase-accent)_15%,transparent)]"
             : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-md"
         }
       `}
@@ -43,7 +43,7 @@ export default function OptionButton({
           <span
             className={`block font-semibold text-base ${
               selected
-                ? "text-blue-700 dark:text-blue-300"
+                ? "text-[var(--phase-accent-strong)] dark:text-[var(--phase-accent-light)]"
                 : "text-slate-800 dark:text-slate-200"
             }`}
           >
@@ -61,7 +61,7 @@ export default function OptionButton({
             transition-all duration-200
             ${
               selected
-                ? "border-blue-500 bg-blue-500"
+                ? "border-[var(--phase-accent)] bg-[var(--phase-accent)]"
                 : "border-slate-300 dark:border-slate-600"
             }
           `}

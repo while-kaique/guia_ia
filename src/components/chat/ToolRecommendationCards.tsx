@@ -115,10 +115,10 @@ export default function ToolRecommendationCards({
               disabled={disabled}
               className={`
                 relative w-full text-left p-4 rounded-2xl border-2 transition-all duration-200
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--phase-accent)]
                 ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
                 ${isSelected
-                  ? "border-blue-500 bg-blue-50/80 dark:bg-blue-950/30 shadow-md shadow-blue-500/10"
+                  ? "border-[var(--phase-accent)] bg-[color-mix(in_oklab,var(--phase-accent)_8%,transparent)] shadow-md shadow-[color-mix(in_oklab,var(--phase-accent)_15%,transparent)]"
                   : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:border-slate-300 dark:hover:border-slate-600"
                 }
               `}
@@ -135,7 +135,7 @@ export default function ToolRecommendationCards({
                 <div className={`
                   mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all duration-200
                   ${isSelected
-                    ? "border-blue-500 bg-blue-500"
+                    ? "border-[var(--phase-accent)] bg-[var(--phase-accent)]"
                     : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
                   }
                 `}>
@@ -154,7 +154,7 @@ export default function ToolRecommendationCards({
                     </span>
                     <span className={`text-sm font-semibold ${
                       isSelected
-                        ? "text-blue-700 dark:text-blue-300"
+                        ? "text-[var(--phase-accent-strong)] dark:text-[var(--phase-accent-light)]"
                         : "text-slate-800 dark:text-slate-200"
                     }`}>
                       {tool.name}
@@ -197,9 +197,9 @@ export default function ToolRecommendationCards({
         disabled={selectedTools.size === 0 || disabled}
         className={`
           w-full py-3.5 px-5 rounded-xl text-sm font-semibold transition-all duration-200
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--phase-accent)] focus-visible:ring-offset-2
           ${selectedTools.size > 0 && !disabled
-            ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 hover:from-blue-700 hover:to-blue-600"
+            ? "bg-gradient-to-r from-[var(--phase-from)] to-[var(--phase-to)] text-white shadow-lg shadow-[color-mix(in_oklab,var(--phase-accent)_25%,transparent)] hover:shadow-[color-mix(in_oklab,var(--phase-accent)_40%,transparent)] hover:brightness-110"
             : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed"
           }
         `}

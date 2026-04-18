@@ -15,7 +15,7 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         initial={{ scale: 0, rotate: -180 }}
         animate={{ scale: 1, rotate: 0 }}
         transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.1 }}
-        className="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500 to-emerald-400 flex items-center justify-center shadow-2xl shadow-blue-500/30 mb-8"
+        className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[var(--phase-from)] to-[var(--phase-to)] flex items-center justify-center shadow-2xl shadow-[color-mix(in_oklab,var(--phase-accent)_40%,transparent)] mb-8"
       >
         <svg
           className="w-10 h-10 text-white"
@@ -40,7 +40,7 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white leading-tight mb-4"
       >
         Bora descobrir como{" "}
-        <span className="bg-gradient-to-r from-blue-600 to-emerald-500 bg-clip-text text-transparent">
+        <span className="bg-gradient-to-r from-[var(--phase-from)] to-[var(--phase-to)] bg-clip-text text-transparent">
           IA pode facilitar
         </span>{" "}
         seu dia?
@@ -89,6 +89,32 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
       >
         Sem julgamentos — todo mundo começa de algum lugar.
       </motion.p>
+
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1, duration: 0.6 }}
+        className="mt-10 flex flex-col items-center gap-3"
+      >
+        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+          <span className="h-px w-8 bg-gradient-to-r from-transparent to-slate-300 dark:to-slate-700" />
+          <span>Feito com</span>
+          <motion.span
+            animate={{ scale: [1, 1.2, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            aria-hidden="true"
+          >
+            ❤️
+          </motion.span>
+          <span>pelo time de</span>
+          <span className="font-semibold text-slate-700 dark:text-slate-200">RPA</span>
+          <span className="h-px w-8 bg-gradient-to-l from-transparent to-slate-300 dark:to-slate-700" />
+        </div>
+
+        <p className="text-sm font-medium bg-gradient-to-r from-blue-600 via-purple-500 to-emerald-500 bg-clip-text text-transparent">
+          Pela construção de uma cultura GoGroup IA First 🚀
+        </p>
+      </motion.div>
     </div>
   );
 }

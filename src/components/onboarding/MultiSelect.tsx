@@ -63,10 +63,10 @@ export default function MultiSelect({ onSubmit }: MultiSelectProps) {
             onClick={() => toggleTool(tool.id)}
             className={`
               flex items-center gap-3 p-4 rounded-xl border-2 transition-all duration-200 text-left
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--phase-accent)]
               ${
                 selected.includes(tool.id)
-                  ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 shadow-md"
+                  ? "border-[var(--phase-accent)] bg-[color-mix(in_oklab,var(--phase-accent)_8%,transparent)] shadow-md"
                   : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:border-slate-300 dark:hover:border-slate-600"
               }
             `}
@@ -76,7 +76,7 @@ export default function MultiSelect({ onSubmit }: MultiSelectProps) {
             <span
               className={`text-sm font-medium ${
                 selected.includes(tool.id)
-                  ? "text-blue-700 dark:text-blue-300"
+                  ? "text-[var(--phase-accent-strong)] dark:text-[var(--phase-accent-light)]"
                   : "text-slate-700 dark:text-slate-300"
               }`}
             >
@@ -92,7 +92,7 @@ export default function MultiSelect({ onSubmit }: MultiSelectProps) {
           value={customTool}
           onChange={(e) => setCustomTool(e.target.value)}
           placeholder="Usa outra ferramenta? Digite aqui..."
-          className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm"
+          className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[var(--phase-accent)] focus:ring-2 focus:ring-[color-mix(in_oklab,var(--phase-accent)_25%,transparent)] transition-all text-sm"
           aria-label="Outra ferramenta de IA"
         />
       </div>

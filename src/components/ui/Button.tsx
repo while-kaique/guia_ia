@@ -9,7 +9,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles = {
   primary:
-    "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:from-blue-500 hover:to-blue-400 active:scale-[0.98]",
+    "bg-gradient-to-r from-[var(--phase-from)] to-[var(--phase-to)] text-white shadow-lg shadow-[color-mix(in_oklab,var(--phase-accent)_30%,transparent)] hover:shadow-[color-mix(in_oklab,var(--phase-accent)_45%,transparent)] hover:brightness-110 active:scale-[0.98]",
   secondary:
     "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 active:scale-[0.98]",
   ghost:
